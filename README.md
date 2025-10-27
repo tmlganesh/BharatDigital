@@ -1,4 +1,4 @@
-# Our Voice, Our Rights - MGNREGA District Performance Dashboard
+#Bharat - MGNREGA District Performance Dashboard
 
 A comprehensive full-stack web application that allows citizens to explore MGNREGA district-level performance through clean visuals and real data from data.gov.in.
 
