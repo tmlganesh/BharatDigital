@@ -1,22 +1,19 @@
-const { StateDistrict } = require('../models');
+const { DataGovINService } = require('../dataGovService');
 const Joi = require('joi');
+
+const dataGovService = new DataGovINService();
 
 class StateController {
   // Get all states
   async getAllStates(req, res) {
     try {
-      const states = await StateDistrict.getAllStates();
-      
-      // Defensive logging for unexpected return types
-      if (!Array.isArray(states)) {
-        console.error('getAllStates: unexpected result type', { type: typeof states, value: states });
-        throw new Error('Unexpected data format from database');
-      }
+      console.log('📋 Fetching states from data.gov.in API...');
+      const states = await dataGovService.getAllStates();
 
       if (!states || states.length === 0) {
         return res.status(404).json({
           error: 'No Data Found',
-          message: 'No states found in database. Please ensure the database is seeded with data.'
+          message: 'No states found from data.gov.in API.'
         });
       }
 
@@ -25,7 +22,7 @@ class StateController {
         data: { 
           states, 
           count: states.length,
-          source: 'database'
+          source: 'data.gov.in API'
         } 
       });
 
@@ -33,7 +30,7 @@ class StateController {
       console.error('Error fetching states:', error);
       res.status(500).json({
         error: 'Internal Server Error',
-        message: 'Failed to fetch states data. Please check database connection.'
+        message: 'Failed to fetch states data from data.gov.in API.'
       });
     }
   }
@@ -56,12 +53,13 @@ class StateController {
         });
       }
 
-      const stateData = await StateDistrict.getDistrictsByState(state);
+      console.log(`📍 Fetching districts for ${state} from data.gov.in API...`);
+      const districts = await dataGovService.getDistrictsByState(state);
       
-      if (!stateData) {
+      if (!districts || districts.length === 0) {
         return res.status(404).json({
-          error: 'State Not Found',
-          message: `State '${state}' not found in database`
+          error: 'No Districts Found',
+          message: `No districts found for state '${state}' in data.gov.in API`
         });
       }
 
@@ -69,8 +67,9 @@ class StateController {
         success: true,
         data: {
           state: state,
-          districts: stateData.districts,
-          count: stateData.districts.length
+          districts: districts,
+          count: districts.length,
+          source: 'data.gov.in API'
         }
       });
 
@@ -78,7 +77,7 @@ class StateController {
       console.error('Error fetching districts:', error);
       res.status(500).json({
         error: 'Internal Server Error',
-        message: 'Failed to fetch districts data from database'
+        message: 'Failed to fetch districts data from data.gov.in API'
       });
     }
   }
@@ -101,14 +100,16 @@ class StateController {
         });
       }
 
-      const searchResults = await StateDistrict.searchDistricts(q);
+      console.log(`🔍 Searching districts with query: "${q}" using data.gov.in API...`);
+      const searchResults = await dataGovService.searchDistricts(q);
       
       res.status(200).json({
         success: true,
         data: {
           query: q,
           results: searchResults,
-          count: searchResults.length
+          count: searchResults.length,
+          source: 'data.gov.in API'
         }
       });
 
@@ -116,7 +117,7 @@ class StateController {
       console.error('Error searching districts:', error);
       res.status(500).json({
         error: 'Internal Server Error',
-        message: 'Failed to search districts in database'
+        message: 'Failed to search districts using data.gov.in API'
       });
     }
   }

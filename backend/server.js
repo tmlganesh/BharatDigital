@@ -5,7 +5,13 @@ const helmet = require('helmet');
 const compression = require('compression');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '.env') });
+
+// Debug environment variables
+console.log('🔧 Environment variables loaded:');
+console.log('MONGO_URI:', process.env.MONGO_URI ? 'Found' : 'Not found');
+console.log('NODE_ENV:', process.env.NODE_ENV);
 
 const performanceRoutes = require('./routes/performance');
 const stateRoutes = require('./routes/states');
@@ -103,8 +109,25 @@ app.use((error, req, res, next) => {
 // Graceful shutdown
 process.on('SIGINT', async () => {
   console.log('🔄 Shutting down gracefully...');
-  await mongoose.connection.close();
+  if (mongoose.connection.readyState !== 0) {
+    await mongoose.connection.close();
+  }
   process.exit(0);
+});
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (err) => {
+  console.error('❌ Uncaught Exception:', err);
+  process.exit(1);
+});
+
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (err) => {
+  console.error('❌ Unhandled Rejection:', err);
+  // Don't exit in production, just log the error
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('🔄 Server continuing to run...');
+  }
 });
 
 app.listen(PORT, () => {
