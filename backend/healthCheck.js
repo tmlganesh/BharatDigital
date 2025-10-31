@@ -23,10 +23,7 @@ class DatabaseHealthCheck {
 
   async connect() {
     try {
-      await mongoose.connect(process.env.MONGO_URI, {
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
-      });
+      await mongoose.connect(process.env.MONGO_URI);
       this.results.connection = true;
       console.log('✅ Database connection successful');
     } catch (error) {

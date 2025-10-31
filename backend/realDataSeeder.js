@@ -363,10 +363,7 @@ class DatabaseSeeder {
   async connect() {
     try {
       if (mongoose.connection.readyState === 0) {
-        await mongoose.connect(process.env.MONGO_URI, {
-          useNewUrlParser: true,
-          useUnifiedTopology: true,
-        });
+        await mongoose.connect(process.env.MONGO_URI);
       }
       this.isConnected = true;
       console.log('✅ Connected to MongoDB for seeding');

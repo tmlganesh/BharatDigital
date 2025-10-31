@@ -11,7 +11,8 @@
     "seed:sample": "node seed.js sample",
     "seed:states": "node seed.js states",
     "seed:performance": "node seed.js performance",
-    "health": "node healthCheck.js"
+    "health": "node healthCheck.js",
+    "import:csv": "node importCSV.js"
   },
   "keywords": [
     "mgnrega",
