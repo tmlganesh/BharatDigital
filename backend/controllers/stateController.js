@@ -1,31 +1,23 @@
 const { StateDistrict } = require('../models');
-const { MockDataService } = require('../mockDataService');
 const Joi = require('joi');
 
 class StateController {
   // Get all states
   async getAllStates(req, res) {
     try {
-      let states;
+      const states = await StateDistrict.getAllStates();
       
-      // Try to get from database first
-      try {
-        states = await StateDistrict.getAllStates();
-        
-        // Defensive logging for unexpected return types
-        if (!Array.isArray(states)) {
-          console.error('getAllStates: unexpected result type', { type: typeof states, value: states });
-          throw new Error('Unexpected data format from database');
-        }
+      // Defensive logging for unexpected return types
+      if (!Array.isArray(states)) {
+        console.error('getAllStates: unexpected result type', { type: typeof states, value: states });
+        throw new Error('Unexpected data format from database');
+      }
 
-        // If no states in DB, use mock data
-        if (!states || states.length === 0) {
-          console.warn('getAllStates: no states found in database, using mock data');
-          states = MockDataService.getAllStates();
-        }
-      } catch (dbError) {
-        console.warn('Database unavailable, using mock data:', dbError.message);
-        states = MockDataService.getAllStates();
+      if (!states || states.length === 0) {
+        return res.status(404).json({
+          error: 'No Data Found',
+          message: 'No states found in database. Please ensure the database is seeded with data.'
+        });
       }
 
       res.status(200).json({ 
@@ -33,7 +25,7 @@ class StateController {
         data: { 
           states, 
           count: states.length,
-          source: states.length > 0 ? 'database' : 'mock'
+          source: 'database'
         } 
       });
 
@@ -41,7 +33,7 @@ class StateController {
       console.error('Error fetching states:', error);
       res.status(500).json({
         error: 'Internal Server Error',
-        message: 'Failed to fetch states data'
+        message: 'Failed to fetch states data. Please check database connection.'
       });
     }
   }
@@ -64,24 +56,12 @@ class StateController {
         });
       }
 
-      let stateData;
-      
-      try {
-        stateData = await StateDistrict.getDistrictsByState(state);
-        
-        if (!stateData) {
-          console.warn(`State '${state}' not found in database, using mock data`);
-          stateData = MockDataService.getDistrictsByState(state);
-        }
-      } catch (dbError) {
-        console.warn('Database unavailable, using mock data:', dbError.message);
-        stateData = MockDataService.getDistrictsByState(state);
-      }
+      const stateData = await StateDistrict.getDistrictsByState(state);
       
       if (!stateData) {
         return res.status(404).json({
           error: 'State Not Found',
-          message: `State '${state}' not found`
+          message: `State '${state}' not found in database`
         });
       }
 
@@ -98,7 +78,7 @@ class StateController {
       console.error('Error fetching districts:', error);
       res.status(500).json({
         error: 'Internal Server Error',
-        message: 'Failed to fetch districts data'
+        message: 'Failed to fetch districts data from database'
       });
     }
   }
@@ -121,14 +101,7 @@ class StateController {
         });
       }
 
-      let searchResults;
-      
-      try {
-        searchResults = await StateDistrict.searchDistricts(q);
-      } catch (dbError) {
-        console.warn('Database unavailable for search, using mock data:', dbError.message);
-        searchResults = MockDataService.searchDistricts(q);
-      }
+      const searchResults = await StateDistrict.searchDistricts(q);
       
       res.status(200).json({
         success: true,
@@ -143,7 +116,7 @@ class StateController {
       console.error('Error searching districts:', error);
       res.status(500).json({
         error: 'Internal Server Error',
-        message: 'Failed to search districts'
+        message: 'Failed to search districts in database'
       });
     }
   }

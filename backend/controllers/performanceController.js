@@ -1,5 +1,4 @@
 const { PerformanceData } = require('../models');
-const { MockDataService } = require('../mockDataService');
 const Joi = require('joi');
 
 class PerformanceController {
@@ -35,51 +34,32 @@ class PerformanceController {
       if (month) query.month = month;
 
       // Fetch performance data
-      let performanceData;
-      let stateAverage;
-      let nationalAverage;
-
-      try {
-        performanceData = await PerformanceData.find(query)
-          .sort({ fin_year: -1, month: -1 })
-          .limit(parseInt(limit));
-
-        if (!performanceData || performanceData.length === 0) {
-          console.warn(`No performance data found in DB for ${district}, ${state}, using mock data`);
-          performanceData = MockDataService.getDistrictPerformance(state, district);
-        }
-
-        // Get latest month data for comparison
-        const latestData = performanceData[0];
-        
-        // Get state average for comparison
-        stateAverage = await PerformanceData.getStateAverage(
-          state, 
-          latestData.fin_year, 
-          latestData.month
-        );
-
-        // Get national average for comparison
-        nationalAverage = await PerformanceData.getNationalAverage(
-          latestData.fin_year, 
-          latestData.month
-        );
-      } catch (dbError) {
-        console.warn('Database unavailable for performance data, using mock data:', dbError.message);
-        performanceData = MockDataService.getDistrictPerformance(state, district);
-        const latestData = performanceData[0];
-        stateAverage = MockDataService.getStateAverage(state, latestData.fin_year, latestData.month);
-        nationalAverage = MockDataService.getNationalAverage(latestData.fin_year, latestData.month);
-      }
+      const performanceData = await PerformanceData.find(query)
+        .sort({ fin_year: -1, month: -1 })
+        .limit(parseInt(limit));
 
       if (!performanceData || performanceData.length === 0) {
         return res.status(404).json({
           error: 'No Data Found',
-          message: `No performance data found for ${district}, ${state}`
+          message: `No performance data found for ${district}, ${state}. Please ensure the database is populated with data.`
         });
       }
 
+      // Get latest month data for comparison
       const latestData = performanceData[0];
+      
+      // Get state average for comparison
+      const stateAverage = await PerformanceData.getStateAverage(
+        state, 
+        latestData.fin_year, 
+        latestData.month
+      );
+
+      // Get national average for comparison
+      const nationalAverage = await PerformanceData.getNationalAverage(
+        latestData.fin_year, 
+        latestData.month
+      );
 
       // Calculate performance status manually since mock data doesn't have the method
       let performanceStatus = null;
